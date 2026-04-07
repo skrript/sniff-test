@@ -1,0 +1,41 @@
+# Copyright (c) Meta Platforms, Inc. and affiliates.
+# All rights reserved.
+#
+# This source code is licensed under the BSD-style license found in the
+# LICENSE file in the root directory of this source tree.
+
+[build-system]
+requires = ["setuptools>=45", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "snifftest-env"
+version = "0.1.0"
+description = "Smell-test themed misinformation investigation RL environment for OpenEnv"
+requires-python = ">=3.10"
+dependencies = [
+    "openenv-core[core]>=0.2.2",
+    "fastapi>=0.104.0",
+    "uvicorn>=0.24.0",
+    "pydantic>=2.0",
+    "anthropic>=0.25.0",
+    "python-dotenv>=1.0.0",
+    "openai>=1.0.0",
+    "huggingface-hub[cli]>=1.9.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0.0",
+    "pytest-cov>=4.0.0",
+]
+
+[project.scripts]
+# Server entry point - enables running via: uv run --project . server
+# or: python -m snifftest_env.server.app
+server = "snifftest_env.server.app:main"
+
+[tool.setuptools]
+include-package-data = true
+packages = ["snifftest_env", "snifftest_env.server"]
+package-dir = { "snifftest_env" = ".", "snifftest_env.server" = "server" }
