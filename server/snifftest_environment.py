@@ -62,8 +62,14 @@ class SniffTestEnvironment(Environment):
     # Initialisation
     # ------------------------------------------------------------------
 
-    def __init__(self) -> None:
+    def __init__(
+        self,
+        dataset_path: Optional[Path] = None,
+        enable_adversarial: bool = True,
+    ) -> None:
         super().__init__()
+        self._dataset_path = Path(dataset_path) if dataset_path is not None else _DATASET_PATH
+        self._enable_adversarial = enable_adversarial
         self._all_scenarios: List[dict] = self._load_dataset()
         self._weakness_tracker = WeaknessTracker()
         self._adversarial_gen = AdversarialGenerator(self._weakness_tracker)
@@ -92,6 +98,7 @@ class SniffTestEnvironment(Environment):
         seed: Optional[int] = None,
         episode_id: Optional[str] = None,
         task_level: Literal["easy", "medium", "hard"] = "easy",
+        scenario_id: Optional[str] = None,
         **kwargs: Any,
     ) -> SniffTestObservation:
         """Reset the environment and start a new investigation episode.
@@ -107,21 +114,33 @@ class SniffTestEnvironment(Environment):
         if seed is not None:
             random.seed(seed)
 
-        # Try adversarial scenario first (only activates after enough episodes)
-        self._adversarial_gen.maybe_generate()
-        adv_scenario = self._adversarial_gen.pop_scenario()
-
-        if adv_scenario:
-            self._current_scenario = ClaimScenario(**adv_scenario)
-            self._is_adversarial_episode = True
-        else:
-            candidates = [
-                s for s in self._all_scenarios if s.get("difficulty") == task_level
-            ]
-            if not candidates:
-                candidates = self._all_scenarios
-            self._current_scenario = ClaimScenario(**random.choice(candidates))
+        if scenario_id is not None:
+            chosen = next(
+                (scenario for scenario in self._all_scenarios if scenario.get("scenario_id") == scenario_id),
+                None,
+            )
+            if chosen is None:
+                raise ValueError(f"Scenario {scenario_id!r} not found in {self._dataset_path}.")
+            self._current_scenario = ClaimScenario(**chosen)
             self._is_adversarial_episode = False
+        else:
+            adv_scenario = None
+            if self._enable_adversarial:
+                # Try adversarial scenario first (only activates after enough episodes)
+                self._adversarial_gen.maybe_generate()
+                adv_scenario = self._adversarial_gen.pop_scenario()
+
+            if adv_scenario:
+                self._current_scenario = ClaimScenario(**adv_scenario)
+                self._is_adversarial_episode = True
+            else:
+                candidates = [
+                    s for s in self._all_scenarios if s.get("difficulty") == task_level
+                ]
+                if not candidates:
+                    candidates = self._all_scenarios
+                self._current_scenario = ClaimScenario(**random.choice(candidates))
+                self._is_adversarial_episode = False
 
         self._episode_id = episode_id or str(uuid.uuid4())
         self._step_count = 0
@@ -279,15 +298,15 @@ class SniffTestEnvironment(Environment):
     # ------------------------------------------------------------------
 
     def _load_dataset(self) -> List[dict]:
-        if not _DATASET_PATH.exists():
+        if not self._dataset_path.exists():
             raise FileNotFoundError(
-                f"Dataset not found at {_DATASET_PATH}. "
+                f"Dataset not found at {self._dataset_path}. "
                 "Run scripts/generate_dataset.py to generate it."
             )
-        with open(_DATASET_PATH, "r") as f:
+        with open(self._dataset_path, "r") as f:
             data = json.load(f)
         if not data:
-            raise ValueError("claims_dataset.json is empty.")
+            raise ValueError(f"{self._dataset_path.name} is empty.")
         return data
 
     def _build_observation(

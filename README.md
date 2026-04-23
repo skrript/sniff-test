@@ -225,6 +225,26 @@ The training entrypoint is [training/train.py](/Users/kevin/Desktop/snifftest_en
 Training code and default training outputs are intentionally excluded from the
 runtime Docker image.
 
+Useful evaluation helpers:
+```bash
+# Evaluate baseline vs post-SFT vs post-RL on the fixed test set
+python3 training/demo_comparison.py \
+  --post-sft-dir training_outputs/sft_warm_start \
+  --post-rl-dir training_outputs/final_merged
+
+# Build a combined reward-curve + fixed-test-set report
+python3 training/plot_rewards.py \
+  --reward-input training_outputs/reward_history.json \
+  --eval-input training_outputs/test_eval_metrics.json \
+  --output training_outputs/training_and_eval_report.png
+```
+
+The fixed test-set evaluation uses `data/test_dataset.json` and reports:
+- `json_valid_rate`
+- `verdict_accuracy`
+- `avg_steps_to_verdict`
+- `tool_use_rate`
+
 ---
 
 ## Adversarial Mode
@@ -274,7 +294,8 @@ snifftest_env/
 ├── data/
 │   ├── claims_dataset.json      # RL scenario dataset
 │   ├── sft_scenarios.json       # SFT-only scenarios
-│   └── sft_trajectories.jsonl   # SFT expert trajectories
+│   ├── sft_trajectories.jsonl   # SFT expert trajectories
+│   └── test_dataset.json        # Fixed eval dataset for baseline/SFT/RL comparison
 ├── scripts/
 │   ├── generate_dataset.py
 │   └── generate_sft_data.py

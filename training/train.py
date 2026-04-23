@@ -336,7 +336,13 @@ def parse_action(text: str) -> tuple[dict[str, Any], bool]:
         return {"action_type": "search", "query": "claim evidence"}, False
 
 
-def run_episode(model: Any, tokenizer: Any, task_level: str, env: Any) -> dict[str, Any]:
+def run_episode(
+    model: Any,
+    tokenizer: Any,
+    task_level: str,
+    env: Any,
+    scenario_id: str | None = None,
+) -> dict[str, Any]:
     """
     Run one full episode directly against the local environment.
 
@@ -344,7 +350,7 @@ def run_episode(model: Any, tokenizer: Any, task_level: str, env: Any) -> dict[s
     """
     InvestigateAction, _ = _import_env_types()
 
-    obs = env.reset(task_level=task_level)
+    obs = env.reset(task_level=task_level, scenario_id=scenario_id)
     messages = [
         {"role": "system", "content": _load_inference_prompt()},
         {
@@ -365,6 +371,9 @@ def run_episode(model: Any, tokenizer: Any, task_level: str, env: Any) -> dict[s
     done = False
     total_reward = 0.0
     invalid_output_penalty = 0.0
+    valid_json_steps = 0
+    used_advanced_tool = False
+    final_verdict = None
 
     for _ in range(MAX_TURNS):
         if done:
@@ -427,6 +436,12 @@ def run_episode(model: Any, tokenizer: Any, task_level: str, env: Any) -> dict[s
             )
             continue
 
+        valid_json_steps += 1
+        if action.action_type in {"cross_reference", "trace_origin", "check_metadata"}:
+            used_advanced_tool = True
+        if action.action_type == "submit_verdict":
+            final_verdict = action.verdict
+
         obs = env.step(action)
         reward = float(obs.reward or 0.0)
         done = bool(obs.done)
@@ -456,6 +471,15 @@ def run_episode(model: Any, tokenizer: Any, task_level: str, env: Any) -> dict[s
         "completions": completions,
         "rewards": rewards,
         "total_reward": total_reward,
+        "step_count": len(rewards),
+        "valid_json_steps": valid_json_steps,
+        "total_steps": len(completions),
+        "json_valid_rate": valid_json_steps / max(len(completions), 1),
+        "used_advanced_tool": used_advanced_tool,
+        "final_verdict": final_verdict,
+        "timed_out": final_verdict is None,
+        "scenario_id": getattr(getattr(env, "_current_scenario", None), "scenario_id", None),
+        "truth_label": getattr(getattr(env, "_current_scenario", None), "truth_label", None),
         "invalid_output_penalty": invalid_output_penalty,
         "reward_components": obs.reward_components if getattr(obs, "done", False) else None,
         "grade_result": getattr(env.state, "grade_result", None),
