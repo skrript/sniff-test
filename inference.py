@@ -186,6 +186,7 @@ def get_model_action(
     """Call the LLM and return (action_dict, error_str)."""
     user_msg = _obs_to_user_message(obs, step)
     conversation.append({"role": "user", "content": user_msg})
+    raw = ""
 
     try:
         completion = client.chat.completions.create(
@@ -201,7 +202,7 @@ def get_model_action(
         return action_dict, None
     except Exception as exc:
         fallback = {"action_type": "search", "query": "evidence"}
-        conversation.append({"role": "assistant", "content": json.dumps(fallback)})
+        conversation.append({"role": "assistant", "content": raw})
         return fallback, str(exc)
 
 

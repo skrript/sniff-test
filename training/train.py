@@ -372,6 +372,7 @@ def run_episode(model: Any, tokenizer: Any, task_level: str, env: Any) -> dict[s
     rewards: list[float] = []
     done = False
     total_reward = 0.0
+    invalid_output_penalty = 0.0
 
     for _ in range(MAX_TURNS):
         if done:
@@ -402,14 +403,37 @@ def run_episode(model: Any, tokenizer: Any, task_level: str, env: Any) -> dict[s
 
         try:
             action_dict, valid = parse_action(completion)
+            if not valid:
+                reward = -0.1
+                rewards.append(reward)
+                total_reward += reward
+                invalid_output_penalty += reward
+                prompts.append(prompt)
+                completions.append(completion)
+                messages.append({"role": "assistant", "content": completion})
+                messages.append(
+                    {
+                        "role": "user",
+                        "content": "Invalid action format. Provide one valid JSON action.",
+                    }
+                )
+                continue
             action = InvestigateAction(**action_dict)
         except Exception:
-            valid = False
-            action = InvestigateAction(action_type="search", query="claim evidence")
-            completion = json.dumps(
-                {"action_type": "search", "query": "claim evidence"},
-                ensure_ascii=True,
+            reward = -0.1
+            rewards.append(reward)
+            total_reward += reward
+            invalid_output_penalty += reward
+            prompts.append(prompt)
+            completions.append(completion)
+            messages.append({"role": "assistant", "content": completion})
+            messages.append(
+                {
+                    "role": "user",
+                    "content": "Invalid action schema. Provide one valid JSON action.",
+                }
             )
+            continue
 
         obs = env.step(action)
         reward = float(obs.reward or 0.0)
@@ -440,6 +464,7 @@ def run_episode(model: Any, tokenizer: Any, task_level: str, env: Any) -> dict[s
         "completions": completions,
         "rewards": rewards,
         "total_reward": total_reward,
+        "invalid_output_penalty": invalid_output_penalty,
         "reward_components": obs.reward_components if getattr(obs, "done", False) else None,
         "grade_result": getattr(env.state, "grade_result", None),
     }
@@ -456,8 +481,11 @@ def rollout_once(trainer: Any, env: Any, tokenizer: Any, task_level: str) -> dic
     prompt_ids: list[int] = []
     completion_ids: list[int] = []
     logprobs: list[float] = []
+    rewards: list[float] = []
     valid_actions = 0
     total_actions = 0
+    total_reward = 0.0
+    invalid_output_penalty = 0.0
 
     for turn in range(MAX_TURNS):
         if getattr(obs, "done", False):
@@ -486,16 +514,31 @@ def rollout_once(trainer: Any, env: Any, tokenizer: Any, task_level: str) -> dic
         total_actions += 1
         valid_actions += int(valid)
 
+        if not valid:
+            step_reward = -0.1
+            rewards.append(step_reward)
+            total_reward += step_reward
+            invalid_output_penalty += step_reward
+            continue
+
         try:
             action = InvestigateAction(**action_dict)
         except Exception:
             valid_actions = max(0, valid_actions - 1)
-            action = InvestigateAction(action_type="search", query="claim evidence")
+            step_reward = -0.1
+            rewards.append(step_reward)
+            total_reward += step_reward
+            invalid_output_penalty += step_reward
+            continue
 
         obs = env.step(action)
+        step_reward = float(obs.reward or 0.0)
+        rewards.append(step_reward)
+        total_reward += step_reward
 
     grade = getattr(env.state, "grade_result", {}) or {}
     components = getattr(obs, "reward_components", None) or {}
+    base_format_reward = float(components.get("format", valid_actions / max(total_actions, 1)))
 
     return {
         "prompt_ids": prompt_ids,
@@ -511,11 +554,12 @@ def rollout_once(trainer: Any, env: Any, tokenizer: Any, task_level: str) -> dic
         "efficiency_reward": float(
             components.get("efficiency", grade.get("efficiency", 0.0))
         ),
-        "format_reward": float(
-            components.get("format", valid_actions / max(total_actions, 1))
-        ),
+        "format_reward": base_format_reward + invalid_output_penalty,
         "anti_hack_reward": float(components.get("anti_hack", 0.0)),
-        "total_reward": float(sum(components.values()) if components else obs.reward or 0.0),
+        "total_reward": float(
+            (sum(components.values()) if components else obs.reward or 0.0)
+            + invalid_output_penalty
+        ),
     }
 
 

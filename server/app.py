@@ -46,7 +46,7 @@ app = create_app(
     InvestigateAction,
     SniffTestObservation,
     env_name="snifftest_env",
-    max_concurrent_envs=1,
+    max_concurrent_envs=4,
 )
 
 
