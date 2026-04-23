@@ -232,12 +232,13 @@ def train_sft(
     output_dir: Path = DEFAULT_OUTPUT_DIR / "sft_warm_start",
     epochs: int = 2,
     learning_rate: float = 2e-4,
+    model_name: str = MODEL_NAME,
 ):
     """Warm-start the policy on expert trajectories before RL."""
     from datasets import Dataset
     from trl import SFTConfig, SFTTrainer
 
-    model, tokenizer = load_unsloth_model()
+    model, tokenizer = load_unsloth_model(model_name=model_name)
     examples = build_sft_examples(load_sft_trajectories())
 
     rendered = []
@@ -695,7 +696,10 @@ def _stage_grpo_config(output_dir: Path, episodes: int):
     )
 
 
-def train_curriculum(output_dir: Path = DEFAULT_OUTPUT_DIR):
+def train_curriculum(
+    output_dir: Path = DEFAULT_OUTPUT_DIR,
+    model_name: str = MODEL_NAME,
+):
     """
     Curriculum training: easy -> medium -> hard.
     Advances stage-by-stage and saves a checkpoint after each stage.
@@ -703,7 +707,7 @@ def train_curriculum(output_dir: Path = DEFAULT_OUTPUT_DIR):
     from trl import GRPOTrainer
 
     _, SniffTestEnvironment = _import_env_types()
-    model, tokenizer = load_unsloth_model()
+    model, tokenizer = load_unsloth_model(model_name=model_name)
     env = SniffTestEnvironment()
     rollout_func = _build_rollout_func(tokenizer=tokenizer, env=env)
 
@@ -813,6 +817,12 @@ def cli() -> None:
     sft_parser.add_argument("--epochs", type=int, default=2)
     sft_parser.add_argument("--learning-rate", type=float, default=2e-4)
     sft_parser.add_argument(
+        "--model-name",
+        type=str,
+        default=MODEL_NAME,
+        help="Base model name or local checkpoint path to fine-tune",
+    )
+    sft_parser.add_argument(
         "--output-dir",
         type=Path,
         default=DEFAULT_OUTPUT_DIR / "sft_warm_start",
@@ -821,6 +831,12 @@ def cli() -> None:
     subparsers.add_parser("sanity-check")
 
     grpo_parser = subparsers.add_parser("train-grpo")
+    grpo_parser.add_argument(
+        "--model-name",
+        type=str,
+        default=MODEL_NAME,
+        help="Base model name or local checkpoint path to continue RL from",
+    )
     grpo_parser.add_argument(
         "--output-dir",
         type=Path,
@@ -836,11 +852,15 @@ def cli() -> None:
             output_dir=args.output_dir,
             epochs=args.epochs,
             learning_rate=args.learning_rate,
+            model_name=args.model_name,
         )
     elif args.command == "sanity-check":
         sanity_check()
     elif args.command == "train-grpo":
-        model, tokenizer, results = train_curriculum(output_dir=args.output_dir)
+        model, tokenizer, results = train_curriculum(
+            output_dir=args.output_dir,
+            model_name=args.model_name,
+        )
         save_final_model(model, tokenizer, output_dir=args.output_dir)
         write_reward_history(results, args.output_dir)
 
