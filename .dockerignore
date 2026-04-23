@@ -9,5 +9,9 @@ __pycache__/
 .ruff_cache/
 training/
 training_outputs/
-docs/FINISHING_TOUCHES.md
+docs/
 data/sft_trajectories.jsonl
+data/sft_scenarios.json
+data/test_dataset.json
+outputs/
+training_notebook.ipynb
