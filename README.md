@@ -214,8 +214,7 @@ docker run -p 8000:8000 \
 
 ### Training
 
-For Hugging Face GPU compute or any other CUDA-capable training machine, install
-the training stack with the optional extra:
+Install the training stack with the optional extra:
 
 ```bash
 uv sync --extra train
@@ -291,6 +290,7 @@ snifftest_env/
 ├── __init__.py                  # Package exports
 ├── models.py                    # InvestigateAction + SniffTestObservation
 ├── client.py                    # SniffTestEnv(EnvClient)
+├── training_notebook.ipynb      # Simplified notebook that executes training/train.py 
 ├── data/
 │   ├── claims_dataset.json      # RL scenario dataset
 │   ├── sft_scenarios.json       # SFT-only scenarios
