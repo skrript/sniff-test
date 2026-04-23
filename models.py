@@ -6,7 +6,7 @@ SniffTestObservation — what the agent sees each step.
 SourceSummary / ActionLog — sub-models used inside the observation.
 """
 
-from typing import List, Literal, Optional
+from typing import Dict, List, Literal, Optional
 
 from openenv.core.env_server.types import Action, Observation
 from pydantic import BaseModel, Field
@@ -128,4 +128,10 @@ class SniffTestObservation(Observation):
     steps_remaining: int = Field(default=10, description="Steps left before timeout")
     message: str = Field(
         default="", description="Thematic feedback message for the agent"
+    )
+    reward_components: Optional[Dict[str, float]] = Field(
+        None,
+        description=(
+            "Named terminal reward components for the most recent verdict submission."
+        ),
     )

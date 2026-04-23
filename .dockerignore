@@ -1,0 +1,13 @@
+.git
+.gitignore
+.venv
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.pytest_cache/
+.ruff_cache/
+training/
+training_outputs/
+docs/FINISHING_TOUCHES.md
+data/sft_trajectories.jsonl

@@ -9,9 +9,11 @@ from typing import List
 
 try:
     from ..models import ActionLog
+    from .reward import justification_quality
     from .world_state import ClaimScenario
 except ImportError:
     from models import ActionLog
+    from server.reward import justification_quality
     from server.world_state import ClaimScenario
 
 
@@ -69,15 +71,10 @@ class TaskGrader:
         coverage = len(opened & key_ids) / max(len(key_ids), 1)
         scores["evidence_alignment"] = round(coverage, 4)
 
-        # 3. Reasoning depth — did justification cite source IDs or domains?
-        justification_lower = (justification or "").lower()
-        source_mentions = sum(
-            1
-            for src in scenario.sources
-            if src.source_id.lower() in justification_lower
-            or src.domain.lower() in justification_lower
+        # 3. Reasoning depth — evidence citation plus connective reasoning.
+        scores["reasoning_depth"] = round(
+            justification_quality(justification, scenario), 4
         )
-        scores["reasoning_depth"] = min(1.0, source_mentions / 2.0)
 
         # 4. Efficiency — fewer steps is better; bonus for finishing in ≤6
         efficiency = max(0.0, 1.0 - (step_count - 3) / 7.0)

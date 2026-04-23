@@ -32,14 +32,14 @@ try:
     )
     from .adversarial import AdversarialGenerator, EpisodeResult, WeaknessTracker
     from .grader import TaskGrader
-    from .reward import RewardEngine
+    from .reward import RewardEngine, format_reward
     from .tools import ToolEngine
     from .world_state import ClaimScenario
 except (ImportError, ModuleNotFoundError):
     from models import ActionLog, InvestigateAction, SniffTestObservation
     from server.adversarial import AdversarialGenerator, EpisodeResult, WeaknessTracker
     from server.grader import TaskGrader
-    from server.reward import RewardEngine
+    from server.reward import RewardEngine, format_reward
     from server.tools import ToolEngine
     from server.world_state import ClaimScenario
 
@@ -81,6 +81,7 @@ class SniffTestEnvironment(Environment):
         self._tool_engine: Optional[ToolEngine] = None
         self._reward_engine: Optional[RewardEngine] = None
         self._last_obs: Optional[SniffTestObservation] = None
+        self._last_reward_components: Optional[dict[str, float]] = None
 
     # ------------------------------------------------------------------
     # OpenEnv interface
@@ -130,6 +131,7 @@ class SniffTestEnvironment(Environment):
         self._timed_out = False
         self._tool_engine = ToolEngine(self._current_scenario)
         self._reward_engine = RewardEngine(self._current_scenario)
+        self._last_reward_components = None
 
         obs = self._build_observation(
             message="🔍 New claim incoming. Does it pass the sniff test?"
@@ -175,6 +177,7 @@ class SniffTestEnvironment(Environment):
 
         done = False
         final_reward = step_reward
+        reward_components = None
 
         if action.action_type == "submit_verdict":
             # Grade the episode and compute terminal reward
@@ -188,10 +191,25 @@ class SniffTestEnvironment(Environment):
                 total_step_reward=self._total_step_reward,
             )
             self._grade_result = grade
-            final_reward = grade["final_score"]
+            reward_components = {
+                "accuracy": round(grade["accuracy"] * self._grader.WEIGHT_ACCURACY, 4),
+                "evidence": round(
+                    grade["evidence_alignment"] * self._grader.WEIGHT_EVIDENCE, 4
+                ),
+                "reasoning": round(
+                    grade["reasoning_depth"] * self._grader.WEIGHT_REASONING, 4
+                ),
+                "efficiency": round(
+                    grade["efficiency"] * self._grader.WEIGHT_EFFICIENCY, 4
+                ),
+                "format": round(format_reward(action), 4),
+                "anti_hack": round(step_reward, 4),
+            }
+            final_reward = round(sum(reward_components.values()), 4)
             done = True
             self._record_episode_to_tracker(grade, timed_out=False)
             obs_kwargs["message"] = self._verdict_message(action.verdict or "", grade)
+            obs_kwargs["reward_components"] = reward_components
 
         elif self._step_count >= _MAX_STEPS:
             # Timeout: penalise and end
@@ -214,6 +232,7 @@ class SniffTestEnvironment(Environment):
             )
 
         self._total_step_reward += step_reward
+        self._last_reward_components = reward_components
 
         obs = self._build_observation(
             tool_result=tool_result,
@@ -312,6 +331,7 @@ class SniffTestEnvironment(Environment):
             message=message,
             done=done,
             reward=reward,
+            reward_components=kwargs.get("reward_components"),
         )
 
     def _dispatch_action(self, action: InvestigateAction) -> tuple:
