@@ -18,7 +18,6 @@ dependencies = [
     "fastapi>=0.104.0",
     "uvicorn>=0.24.0",
     "pydantic>=2.0",
-    "anthropic>=0.25.0",
     "python-dotenv>=1.0.0",
     "openai>=1.0.0",
     "huggingface-hub[cli]>=1.9.0",

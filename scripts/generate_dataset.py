@@ -2,7 +2,7 @@
 """
 Dataset generation script for SniffTest.
 
-Calls the Anthropic API (claude-sonnet-4-20250514) to generate 20 claim
+Calls the OpenAI API (`gpt-5-mini`) to generate 20 claim
 investigation scenarios: 7 easy, 7 medium, 6 hard.
 
 Run once: python scripts/generate_dataset.py
@@ -20,8 +20,12 @@ import os
 import sys
 from pathlib import Path
 
+from dotenv import load_dotenv
+
 ROOT = Path(__file__).parent.parent
 OUTPUT_PATH = ROOT / "data" / "claims_dataset.json"
+
+load_dotenv(ROOT / ".env")
 
 
 SYSTEM = (
@@ -80,33 +84,35 @@ Return ONLY the JSON array. No markdown fences, no comments, no extra text."""
 
 
 def generate() -> None:
-    api_key = os.environ.get("ANTHROPIC_API_KEY")
+    api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key:
         print(
-            "ERROR: ANTHROPIC_API_KEY environment variable is not set.", file=sys.stderr
+            "ERROR: OPENAI_API_KEY environment variable is not set.", file=sys.stderr
         )
         sys.exit(1)
 
     try:
-        import anthropic
+        from openai import OpenAI
     except ImportError:
         print(
-            "ERROR: anthropic package not installed. Run: pip install anthropic",
+            "ERROR: openai package not installed. Run: uv add openai",
             file=sys.stderr,
         )
         sys.exit(1)
 
-    print("Generating dataset via Claude API...")
-    client = anthropic.Anthropic(api_key=api_key)
+    print("Generating dataset via OpenAI API...")
+    client = OpenAI(api_key=api_key)
 
-    response = client.messages.create(
-        model="claude-sonnet-4-20250514",
-        max_tokens=8000,
-        system=SYSTEM,
-        messages=[{"role": "user", "content": PROMPT}],
+    response = client.responses.create(
+        model="gpt-5-mini",
+        max_output_tokens=8000,
+        input=[
+            {"role": "system", "content": SYSTEM},
+            {"role": "user", "content": PROMPT},
+        ],
     )
 
-    raw = response.content[0].text.strip()
+    raw = response.output_text.strip()
 
     # Strip accidental markdown fences
     if raw.startswith("```"):

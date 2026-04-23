@@ -4,3 +4,4 @@
 ./trl.ipynb
 ./grpo_training_colab.ipynb
 docs/
+.env

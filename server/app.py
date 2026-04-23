@@ -20,6 +20,12 @@ Usage:
     uvicorn server.app:app --host 0.0.0.0 --port 8000
 """
 
+from pathlib import Path
+
+from dotenv import load_dotenv
+
+load_dotenv(Path(__file__).resolve().parent.parent / ".env")
+
 try:
     from openenv.core.env_server.http_server import create_app
 except Exception as e:  # pragma: no cover

@@ -1,11 +1,11 @@
 """
 Adversarial scenario generator — tracks agent weaknesses and generates
-targeted ClaimScenario batches using Claude when weaknesses are confirmed.
+targeted ClaimScenario batches using OpenAI when weaknesses are confirmed.
 
 Design principles (from BUILD_NOTES.md):
-- Lazy generation: Claude is called ONCE when a weakness threshold is crossed,
+- Lazy generation: OpenAI is called ONCE when a weakness threshold is crossed,
   producing a batch of 5 scenarios cached in memory. Per-episode calls = slow.
-- Graceful fallback: If ANTHROPIC_API_KEY is missing, silently falls back to
+- Graceful fallback: If OPENAI_API_KEY is missing, silently falls back to
   the static dataset. No crashes.
 - Same grader: Adversarially generated scenarios use the identical ClaimScenario
   schema, so TaskGrader works unchanged.
@@ -114,7 +114,7 @@ class WeaknessTracker:
         return bool(self.get_weaknesses())
 
     def summary_for_prompt(self) -> str:
-        """Human-readable weakness description for the Claude prompt."""
+        """Human-readable weakness description for the generation prompt."""
         w = self.get_weaknesses()
         if not w:
             return "No confirmed weaknesses yet."
@@ -138,7 +138,7 @@ class WeaknessTracker:
 
 
 class AdversarialGenerator:
-    """Generates targeted ClaimScenario batches using Claude.
+    """Generates targeted ClaimScenario batches using OpenAI.
 
     Scenarios are cached in memory and served until exhausted.
     Falls back to the static dataset gracefully if the API key is missing.
@@ -149,13 +149,13 @@ class AdversarialGenerator:
     def __init__(self, tracker: WeaknessTracker) -> None:
         self.tracker = tracker
         self._cache: List[dict] = []
-        self._api_key = os.environ.get("ANTHROPIC_API_KEY")
+        self._api_key = os.environ.get("OPENAI_API_KEY")
         self._client = None
         if self._api_key:
             try:
-                import anthropic
+                from openai import OpenAI
 
-                self._client = anthropic.Anthropic(api_key=self._api_key)
+                self._client = OpenAI(api_key=self._api_key)
             except ImportError:
                 pass
 
@@ -236,14 +236,19 @@ Targeting rules:
 
 Return ONLY the JSON array. No markdown, no preamble."""
 
-        response = self._client.messages.create(
-            model="claude-sonnet-4-20250514",
-            max_tokens=6000,
-            system="You are generating synthetic datasets for AI research. Return only valid JSON arrays.",
-            messages=[{"role": "user", "content": prompt}],
+        response = self._client.responses.create(
+            model="gpt-5-mini",
+            max_output_tokens=6000,
+            input=[
+                {
+                    "role": "system",
+                    "content": "You are generating synthetic datasets for AI research. Return only valid JSON arrays.",
+                },
+                {"role": "user", "content": prompt},
+            ],
         )
 
-        raw = response.content[0].text.strip()
+        raw = response.output_text.strip()
         if raw.startswith("```"):
             parts = raw.split("```")
             raw = parts[1] if len(parts) > 1 else raw

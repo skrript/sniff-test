@@ -24,7 +24,7 @@ gathers evidence through tool calls, and submits a verdict against a determinist
 state. Three difficulty tiers: **🟢 Fresh** (easy), **🟡 Stale** (medium), **🔴 Rotten** (hard).
 
 The environment uniquely features an **adversarial scenario generator** that tracks agent
-weakness patterns across episodes and uses Claude to generate targeted scenarios that exploit
+weakness patterns across episodes and uses OpenAI to generate targeted scenarios that exploit
 confirmed failure modes — a self-improving curriculum observable in real time via the `/state`
 endpoint.
 
@@ -170,12 +170,6 @@ The dataset (`data/claims_dataset.json`) contains claim investigation scenarios 
 }]
 ```
 
-**Regenerate with Claude (recommended — yields 20 higher-quality scenarios):**
-```bash
-export ANTHROPIC_API_KEY=your_key
-python scripts/generate_dataset.py
-```
-
 ---
 
 ## Setup & Usage
@@ -208,8 +202,8 @@ docker build -t snifftest-env:latest .
 
 # Run
 docker run -p 8000:8000 \
-  -e ANTHROPIC_API_KEY=sk-ant-... \
   -e OPENAI_API_KEY=sk-... \
+  -e HF_TOKEN=hf_... \
   snifftest-env:latest
 ```
 
@@ -218,7 +212,7 @@ docker run -p 8000:8000 \
 ## Adversarial Mode
 
 After 5+ episodes, SniffTest's `WeaknessTracker` analyses agent performance and, when
-weaknesses are confirmed, calls Claude to generate a batch of 5 targeted scenarios
+weaknesses are confirmed, calls OpenAI `gpt-5-mini` to generate a batch of 5 targeted scenarios
 that exploit those specific failure modes.
 
 Observable via the `/state` endpoint:
@@ -231,7 +225,7 @@ Observable via the `/state` endpoint:
 }
 ```
 
-Graceful fallback: if `ANTHROPIC_API_KEY` is not set, the environment silently uses
+Graceful fallback: if `OPENAI_API_KEY` is not set, the environment silently uses
 the static dataset. No crashes, no degraded functionality.
 
 ---
@@ -262,7 +256,7 @@ snifftest_env/
 ├── data/
 │   └── claims_dataset.json      # Static scenario dataset
 ├── scripts/
-│   └── generate_dataset.py      # Claude-powered dataset generator
+│   └── generate_dataset.py
 ├── outputs/
 │   ├── logs/
 │   └── evals/
