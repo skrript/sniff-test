@@ -142,7 +142,7 @@ If `max_steps` (10) is reached without `submit_verdict`: **-0.5** penalty, `done
 
 ## Dataset
 
-The dataset (`data/claims_dataset.json`) contains claim investigation scenarios with:
+The RL environment uses `data/claims_dataset.json` for adversarial claim scenarios with:
 - 4–6 sources per scenario (mix of reliable and unreliable)
 - Hidden reliability scores (0.0–1.0) per source
 - Propagation chains showing how claims spread
@@ -169,6 +169,11 @@ The dataset (`data/claims_dataset.json`) contains claim investigation scenarios 
   "grader_notes": "... Smell test verdict: ROTTEN."
 }]
 ```
+
+SFT warm-start data is intentionally separate to avoid overfitting on the RL claim set:
+- `data/sft_scenarios.json`: formatting-focused prompt scenarios used only to generate SFT trajectories
+- `data/sft_trajectories.jsonl`: self-contained expert trajectories for SFT warm start, including the visible source context needed for export
+- `scripts/generate_sft_data.py`: OpenAI-backed generator that reads `sft_scenarios.json`, not `claims_dataset.json`
 
 ---
 
@@ -267,9 +272,12 @@ snifftest_env/
 ├── models.py                    # InvestigateAction + SniffTestObservation
 ├── client.py                    # SniffTestEnv(EnvClient)
 ├── data/
-│   └── claims_dataset.json      # Static scenario dataset
+│   ├── claims_dataset.json      # RL scenario dataset
+│   ├── sft_scenarios.json       # SFT-only scenarios
+│   └── sft_trajectories.jsonl   # SFT expert trajectories
 ├── scripts/
-│   └── generate_dataset.py
+│   ├── generate_dataset.py
+│   └── generate_sft_data.py
 ├── outputs/
 │   ├── logs/
 │   └── evals/

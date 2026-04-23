@@ -147,14 +147,7 @@ def load_sft_trajectories(
                 rows.append(json.loads(line))
     return rows
 
-
-def _load_scenarios_by_id() -> dict[str, dict[str, Any]]:
-    scenarios = json.loads(DATASET_PATH.read_text())
-    return {scenario["scenario_id"]: scenario for scenario in scenarios}
-
-
-def _format_available_sources(scenario: dict[str, Any]) -> str:
-    visible = scenario["sources"][:3]
+def _format_available_sources(visible: list[dict[str, Any]]) -> str:
     return "\n".join(
         f"- [{src['source_id']}] {src['title']} ({src['domain']}): {src['snippet']}"
         for src in visible
@@ -163,14 +156,14 @@ def _format_available_sources(scenario: dict[str, Any]) -> str:
 
 def _make_sft_user_turn(
     record: dict[str, Any],
-    scenario: dict[str, Any],
     prior_actions: list[dict[str, Any]],
 ) -> str:
+    visible_sources = record.get("visible_sources", [])
     lines = [
         f"Investigate this claim: {record['claim']}",
         "",
         "Available sources:",
-        _format_available_sources(scenario),
+        _format_available_sources(visible_sources),
     ]
     if prior_actions:
         lines.extend(
@@ -189,12 +182,11 @@ def _make_sft_user_turn(
 
 def build_sft_examples(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
     """Expand trajectories into per-step chat examples."""
-    scenarios_by_id = _load_scenarios_by_id()
     examples: list[dict[str, Any]] = []
 
     for record in records:
-        scenario = scenarios_by_id.get(record["scenario_id"])
-        if scenario is None:
+        visible_sources = record.get("visible_sources")
+        if not isinstance(visible_sources, list) or len(visible_sources) < 3:
             continue
 
         actions = record.get("actions", [])
@@ -204,7 +196,7 @@ def build_sft_examples(records: list[dict[str, Any]]) -> list[dict[str, Any]]:
                 {"role": "system", "content": SYSTEM_PROMPT},
                 {
                     "role": "user",
-                    "content": _make_sft_user_turn(record, scenario, prior_actions),
+                    "content": _make_sft_user_turn(record, prior_actions),
                 },
                 {
                     "role": "assistant",
