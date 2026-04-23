@@ -4619,7 +4619,7 @@ requires-dist = [
     { name = "accelerate", marker = "extra == 'train'", specifier = ">=1.13.0" },
     { name = "datasets", marker = "extra == 'train'", specifier = ">=3.6.0" },
     { name = "fastapi", specifier = ">=0.104.0" },
-    { name = "huggingface-hub", extras = ["cli"], specifier = ">=1.9.0" },
+    { name = "huggingface-hub", specifier = ">=1.9.0" },
     { name = "matplotlib", marker = "extra == 'train'", specifier = ">=3.10.8" },
     { name = "openai", specifier = ">=1.0.0" },
     { name = "openenv-core", extras = ["core"], specifier = ">=0.2.2" },

@@ -20,7 +20,7 @@ dependencies = [
     "pydantic>=2.0",
     "python-dotenv>=1.0.0",
     "openai>=1.0.0",
-    "huggingface-hub[cli]>=1.9.0",
+    "huggingface-hub>=1.9.0",
 ]
 
 [project.optional-dependencies]

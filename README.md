@@ -207,6 +207,19 @@ docker run -p 8000:8000 \
   snifftest-env:latest
 ```
 
+### Training
+
+For Hugging Face GPU compute or any other CUDA-capable training machine, install
+the training stack with the optional extra:
+
+```bash
+uv sync --extra train
+```
+
+The training entrypoint is [training/train.py](/Users/kevin/Desktop/snifftest_env/training/train.py).
+Training code and default training outputs are intentionally excluded from the
+runtime Docker image.
+
 ---
 
 ## Adversarial Mode
