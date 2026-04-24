@@ -48,6 +48,12 @@ trajectory (not just at the terminal step), teaching good investigative practice
 
 ---
 
+### Links:
+
+[Huggingface space](https://huggingface.co/spaces/skrrskrr/snifftest_env)
+
+---
+
 ## Action Space
 
 | `action_type` | Required Fields | Description |
