@@ -200,7 +200,7 @@ openenv validate
 
 # 4. Run baseline inference (requires a running server)
 export API_BASE_URL="https://router.huggingface.co/v1"
-export MODEL_NAME="Qwen/Qwen2.5-72B-Instruct"
+export SNIFFTEST_MODEL_NAME="Qwen/Qwen2.5-72B-Instruct"
 export HF_TOKEN="hf_..."
 python inference.py --base-url http://localhost:8000 --runs-per-task 3
 ```
@@ -296,7 +296,7 @@ snifftest_env/
 ├── __init__.py                  # Package exports
 ├── models.py                    # InvestigateAction + SniffTestObservation
 ├── client.py                    # SniffTestEnv(EnvClient)
-├── training_notebook.ipynb      # Simplified notebook that executes training/train.py 
+├── snifftest_train.ipynb        # Self-contained training notebook for SFT + GRPO + evals
 ├── data/
 │   ├── claims_dataset.json      # RL scenario dataset
 │   ├── sft_scenarios.json       # SFT-only scenarios

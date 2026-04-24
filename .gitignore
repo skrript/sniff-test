@@ -1,7 +1,13 @@
 *__pycache__*
 *.pyc
 *egg-info*
-./trl.ipynb
-./grpo_training_colab.ipynb
-docs/
+/trl.ipynb
+/grpo_training_colab.ipynb
+/training/
+/training_outputs/
+/outputs/
+/wandb/
+*.ipynb_checkpoints/
+**/.ipynb_checkpoints/
+/docs/
 .env

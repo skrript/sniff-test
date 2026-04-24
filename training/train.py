@@ -34,7 +34,11 @@ DEFAULT_OUTPUT_DIR = Path(
     os.getenv("SNIFFTEST_TRAIN_OUTPUT_DIR", str(ROOT / "training_outputs"))
 )
 
-MODEL_NAME = os.getenv("SNIFFTEST_MODEL_NAME", "unsloth/Qwen2.5-1.5B-Instruct")
+MODEL_NAME = (
+    os.getenv("SNIFFTEST_MODEL_NAME")
+    or os.getenv("MODEL_NAME")
+    or "unsloth/Qwen2.5-1.5B-Instruct"
+)
 MAX_SEQ_LENGTH = int(os.getenv("SNIFFTEST_MAX_SEQ_LENGTH", "2048"))
 LORA_RANK = int(os.getenv("SNIFFTEST_LORA_RANK", "16"))
 MAX_TURNS = 10

@@ -4,12 +4,13 @@ SniffTest Baseline Inference Script
 MANDATORY
 - Before submitting, ensure the following variables are defined:
     API_BASE_URL   The API endpoint for the LLM.
-    MODEL_NAME     The model identifier to use for inference.
+    SNIFFTEST_MODEL_NAME or MODEL_NAME
+                   The model identifier to use for inference.
     HF_TOKEN       Your Hugging Face / API key.
 
-- Defaults are set for API_BASE_URL and MODEL_NAME:
+- Defaults are set for API_BASE_URL and the model env var:
     API_BASE_URL = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
-    MODEL_NAME   = os.getenv("MODEL_NAME",   "Qwen/Qwen2.5-72B-Instruct")
+    SNIFFTEST_MODEL_NAME / MODEL_NAME = "Qwen/Qwen2.5-72B-Instruct"
 
 - The inference script must be named `inference.py` and placed in the project root.
 - Uses OpenAI Client for all LLM calls.
@@ -51,7 +52,11 @@ except ImportError:
 
 API_KEY: str = os.getenv("HF_TOKEN") or os.getenv("OPENAI_API_KEY") or ""
 API_BASE_URL: str = os.getenv("API_BASE_URL", "https://router.huggingface.co/v1")
-MODEL_NAME: str = os.getenv("MODEL_NAME", "Qwen/Qwen2.5-72B-Instruct")
+MODEL_NAME: str = (
+    os.getenv("SNIFFTEST_MODEL_NAME")
+    or os.getenv("MODEL_NAME")
+    or "Qwen/Qwen2.5-72B-Instruct"
+)
 BENCHMARK: str = "snifftest_env"
 
 MAX_STEPS: int = 10
