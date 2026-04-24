@@ -1,8 +1,6 @@
 *__pycache__*
 *.pyc
 *egg-info*
-/trl.ipynb
-/grpo_training_colab.ipynb
 /training/
 /training_outputs/
 /outputs/
