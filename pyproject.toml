@@ -37,7 +37,8 @@ train = [
     "torch>=2.6.0",
     "transformers>=4.56.0",
     "trl>=0.17.0",
-    "unsloth>=2025.9.5",
+    "unsloth>=2026.4.4",
+    "unsloth_zoo>=2026.4.4",
     "vllm>=0.8.0",
 ]
 
