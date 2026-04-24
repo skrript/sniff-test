@@ -9,3 +9,4 @@
 **/.ipynb_checkpoints/
 /docs/
 .env
+unsloth_compiled_cache/
