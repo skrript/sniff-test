@@ -5,3 +5,5 @@
 ./grpo_training_colab.ipynb
 docs/
 .env
+PROJECT.md
+./references/*
