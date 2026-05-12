@@ -48,6 +48,12 @@ trajectory (not just at the terminal step), teaching good investigative practice
 
 ---
 
+### Links:
+
+[Huggingface space](https://huggingface.co/spaces/skrrskrr/snifftest_env)
+
+---
+
 ## Action Space
 
 | `action_type` | Required Fields | Description |
@@ -194,7 +200,7 @@ openenv validate
 
 # 4. Run baseline inference (requires a running server)
 export API_BASE_URL="https://router.huggingface.co/v1"
-export MODEL_NAME="Qwen/Qwen2.5-72B-Instruct"
+export SNIFFTEST_MODEL_NAME="Qwen/Qwen2.5-72B-Instruct"
 export HF_TOKEN="hf_..."
 python inference.py --base-url http://localhost:8000 --runs-per-task 3
 ```
@@ -214,8 +220,7 @@ docker run -p 8000:8000 \
 
 ### Training
 
-For Hugging Face GPU compute or any other CUDA-capable training machine, install
-the training stack with the optional extra:
+Install the training stack with the optional extra:
 
 ```bash
 uv sync --extra train
@@ -291,6 +296,7 @@ snifftest_env/
 ├── __init__.py                  # Package exports
 ├── models.py                    # InvestigateAction + SniffTestObservation
 ├── client.py                    # SniffTestEnv(EnvClient)
+├── snifftest_train.ipynb        # Self-contained training notebook for SFT + GRPO + evals
 ├── data/
 │   ├── claims_dataset.json      # RL scenario dataset
 │   ├── sft_scenarios.json       # SFT-only scenarios

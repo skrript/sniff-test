@@ -6,7 +6,10 @@ from openenv.core import EnvClient
 from openenv.core.client_types import StepResult
 from openenv.core.env_server.types import State
 
-from .models import ActionLog, InvestigateAction, SniffTestObservation, SourceSummary
+try:
+    from .models import ActionLog, InvestigateAction, SniffTestObservation, SourceSummary
+except ImportError:
+    from models import ActionLog, InvestigateAction, SniffTestObservation, SourceSummary
 
 
 class SniffTestEnv(EnvClient[InvestigateAction, SniffTestObservation, State]):
